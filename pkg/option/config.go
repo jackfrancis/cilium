@@ -812,14 +812,18 @@ const (
 	// tracking map.
 	FragmentsMapEntriesName = "bpf-fragments-map-max"
 
-	// K8sEnableAPIDiscovery
+	// K8sEnableAPIDiscovery enables Kubernetes API discovery
 	K8sEnableAPIDiscovery = "enable-k8s-api-discovery"
 
 	// LBMapEntriesName configures max entries for BPF lbmap.
 	LBMapEntriesName = "bpf-lb-map-max"
+
+	// ServiceProxyName instructs Cilium to handle service objects only when
+	// service.kubernetes.io/service-proxy-name label equals the provided value.
+	ServiceProxyName = "service-proxy-name"
 )
 
-// HelpFlagSections to format the Cilium Agent help template.
+// HelpFlagSections to format the Cilium Agent help tK8sEnableAPIDiscoveryemplate.
 // Developers please make sure to add the new flags to
 // the respective sections or create a new section.
 var HelpFlagSections = []FlagsSection{
@@ -1920,6 +1924,13 @@ type DaemonConfig struct {
 
 	// LBMapEntries is the maximum number of entries allowed in BPF lbmap.
 	LBMapEntries int
+
+	// ServiceProxyName is the value of service.kubernetes.io/service-proxy-name label,
+	// that identifies the service objects Cilium should handle.
+	// If the provided value is an empty string, Cilium will manage service objects when
+	// the label is not present. For more details -
+	// https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/0031-20181017-kube-proxy-services-optional.md
+	ServiceProxyName string
 }
 
 var (
@@ -2449,6 +2460,7 @@ func (c *DaemonConfig) Populate() {
 	c.PolicyAuditMode = viper.GetBool(PolicyAuditModeArg)
 	c.EnableIPv4FragmentsTracking = viper.GetBool(EnableIPv4FragmentsTrackingName)
 	c.FragmentsMapEntries = viper.GetInt(FragmentsMapEntriesName)
+	c.ServiceProxyName = viper.GetString(ServiceProxyName)
 
 	c.populateDevices()
 

@@ -65,6 +65,7 @@ cilium-operator [flags]
       --operator-api-serve-addr string            Address to serve API requests (default "localhost:9234")
       --operator-prometheus-serve-addr string     Address to serve Prometheus metrics (default ":6942")
       --parallel-alloc-workers int                Maximum number of parallel IPAM workers (default 50)
+      --service-proxy-name string                 Value of service-proxy-name label for which cilium handles the services (empty = all services without service.kubernetes.io/service-proxy-name label)
       --subnet-ids-filter strings                 Subnets IDs (separated by commas)
       --subnet-tags-filter stringToString         Subnets tags in the form of k1=v1,k2=v2 (multiple k/v pairs can also be passed by repeating the CLI flag (default [])
       --synchronize-k8s-nodes                     Synchronize Kubernetes nodes to kvstore and perform CNP GC (default true)

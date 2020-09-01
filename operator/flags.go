@@ -279,5 +279,8 @@ func init() {
 		"Duration that LeaderElector clients should wait between retries of the actions")
 	option.BindEnv(operatorOption.LeaderElectionRetryPeriod)
 
+	flags.String(option.ServiceProxyName, "", "Value of service-proxy-name label for which cilium handles the services (empty = all services without service.kubernetes.io/service-proxy-name label)")
+	option.BindEnv(option.ServiceProxyName)
+
 	viper.BindPFlags(flags)
 }
