@@ -352,6 +352,46 @@ var _ = Describe("K8sServicesTest", func() {
 				testCurlFromPods(echoPodLabel, url, 10, 0)
 			})
 		})
+
+		It("Checks service.kubernetes.io/service-proxy-name label implementation", func() {
+			serviceProxyLabelName := "service.kubernetes.io/service-proxy-name"
+
+			ciliumPods, err := kubectl.GetCiliumPods(helpers.CiliumNamespace)
+			Expect(err).To(BeNil(), "Cannot get cilium pods")
+
+			clusterIP, _, err := kubectl.GetServiceHostPort(helpers.DefaultNamespace, echoServiceName)
+			Expect(err).Should(BeNil(), "Cannot get service %q ClusterIP", echoServiceName)
+			Expect(govalidator.IsIP(clusterIP)).Should(BeTrue(), "ClusterIP is not an IP")
+
+			url := fmt.Sprintf("http://%s/", clusterIP)
+
+			By("Labelling echo service with dummy service-proxy-name")
+			res := kubectl.Exec(fmt.Sprintf("kubectl label services/%s %s=%s", echoServiceName, serviceProxyLabelName, "dummy-lb"))
+			res.ExpectSuccess("cannot label service")
+
+			// Give time for the change in labels to be picked up by the controller.
+			time.Sleep(3 * time.Second)
+			for _, pod := range ciliumPods {
+				service := kubectl.CiliumExecMustSucceed(context.TODO(), pod, "cilium service list", "Cannot retrieve services on cilium Pod")
+				service.ExpectDoesNotContain(clusterIP, "ClusterIP is present in the cilium service list")
+			}
+
+			By("Checking that service should not be reachable with dummy service-proxy-name")
+			testCurlFromPods(echoPodLabel, url, 5, 5)
+
+			By("Removing echo service service-proxy-name label")
+			res = kubectl.Exec(fmt.Sprintf("kubectl label services/%s %s-", echoServiceName, serviceProxyLabelName))
+			res.ExpectSuccess("cannot remove label from service")
+
+			time.Sleep(3 * time.Second)
+			for _, pod := range ciliumPods {
+				service := kubectl.CiliumExecMustSucceed(context.TODO(), pod, "cilium service list", "Cannot retrieve services on cilium Pod")
+				service.ExpectContains(clusterIP, "ClusterIP is not present in the cilium service list")
+			}
+
+			By("Checking that service should be reachable with no service-proxy-name")
+			testCurlFromPods(echoPodLabel, url, 5, 0)
+		})
 	})
 
 	Context("Checks service across nodes", func() {
